@@ -25,7 +25,7 @@ This repository contains the experimental pipeline for evaluating N-BEATS (Neura
 
 ## Repository Structure and Execution
 
-* `5267nbeats_pipeline_synth.py`: Main executable script containing the `RobustBTP` synthetic data generator, the simplified `SimpleNBeats` PyTorch architecture, and the experimental pipeline.
+* `Nbeats_pipeline_synth.py`: Main executable script containing the `RobustBTP` synthetic data generator, the simplified `SimpleNBeats` PyTorch architecture, and the experimental pipeline.
 * `requirements.txt`: Python environment dependencies.
 * `.gitignore`: Configuration to exclude generated datasets, temporary environments, and local system files.
 
@@ -33,5 +33,5 @@ This repository contains the experimental pipeline for evaluating N-BEATS (Neura
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
-   cd YOUR_REPOSITORY_NAME
+   git clone https://github.com/Mishan6000/Kondrashov_Coursework_NBEATS.git
+   cd Mishan6000
