@@ -1,0 +1,22 @@
+# data
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+
+# ml dl
+scikit-learn>=1.0.2
+catboost>=1.1.1
+torch>=1.12.0
+
+# time series
+ruptures>=1.1.7
+colorednoise>=2.1.0
+ordpy>=1.1.1
+
+# visual
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# utilities
+tqdm>=4.64.0
+ipython>=7.31.1
