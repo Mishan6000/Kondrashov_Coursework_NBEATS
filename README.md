@@ -23,8 +23,15 @@ This repository contains the experimental pipeline for evaluating N-BEATS (Neura
 * The model struggles in pure entropy settings (White noise) where baseline forecasting error is inherently volatile.
 * In correlated environments, the residual geometry contains deep directional intelligence, allowing the model to accurately classify the direction of the structural shift.
 
+## Repository Structure and Execution
+
+* `5267nbeats_pipeline_synth.py`: Main executable script containing the `RobustBTP` synthetic data generator, the simplified `SimpleNBeats` PyTorch architecture, and the experimental pipeline.
+* `requirements.txt`: Python environment dependencies.
+* `.gitignore`: Configuration to exclude generated datasets, temporary environments, and local system files.
+
 ## Execution Instructions
 
-1. **Install dependencies:**
+1. **Clone the repository:**
    ```bash
-   pip install -r requirements.txt
+   git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
+   cd YOUR_REPOSITORY_NAME
