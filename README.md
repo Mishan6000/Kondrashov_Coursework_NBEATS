@@ -1,37 +1,85 @@
-# Evaluating the Quality of the N-BEATS Model for Predicting Outliers
+# Can N-BEATS Forecasting Errors Detect Structural Breaks?
 
-**National Research University Higher School of Economics (HSE)**  
-Faculty of Computer Science  
-**Author:** Kondrashov Mikhail Antonovich 
+Coursework project, 2nd year · HSE University, Faculty of Computer Science, programme "Data Science and Business Analytics"
+**Author:** Mikhail Kondrashov · **Supervisor:** Petr Lukianchenko · 2026
 
----
+## TL;DR
 
-## Overview
+We train N-BEATS only to forecast, never on break labels, and flag a structural break whenever the absolute forecasting error exceeds a high percentile. On synthetic regime-switching series this works well when the background noise is correlated (F1 ≈ 0.51, recall 1.0 for red noise; F1 ≈ 0.9 at the 98th-percentile threshold) and poorly when it is white (F1 = 0.22). The sign of the error also tells the direction of the shift (macro-F1 ≈ 0.7 for red and black noise).
 
-This repository contains the experimental pipeline for evaluating N-BEATS (Neural Basis Expansion Analysis Time Series) in the context of unsupervised anomaly detection. The project investigates whether absolute forecasting errors from an N-BEATS network can serve as reliable indicators for structural breaks in time series data without explicit labels.
+![Residual spikes at true breaks, red noise](graphics/nbeats_btp_qualitative_residual_proof.jpeg)
 
-## Methodology
+## Research question
 
-* **Data:** Synthetic Binary Telegraph Process (BTP) corrupted by varying stochastic noise regimes (White, Pink, Red, Blue, Green, Black) to test sensitivity to temporal correlation.
-* **Approach:** N-BEATS is trained purely on an unsupervised forecasting task. Structural breaks are flagged when the absolute forecasting residual exceeds a strict upper percentile threshold (e.g., 95th).
-* **Evaluation:** Margin-based classification metrics (Precision, Recall, F1-score) are computed via the Ruptures library using a tolerance margin of w = 2 time steps.
+Can the residuals of a pure forecasting network serve as a zero-shot, label-free indicator of change points, and how does this depend on the temporal structure of the noise?
 
-## Key Findings
+## Setup
 
-* The zero-shot anomaly detection paradigm is viable, but success strongly depends on the underlying noise color.
-* N-BEATS yields high detection performance in structured, correlated regimes (e.g., Red and Green noise) where breaks violently disrupt predictable drift.
-* The model struggles in pure entropy settings (White noise) where baseline forecasting error is inherently volatile.
-* In correlated environments, the residual geometry contains deep directional intelligence, allowing the model to accurately classify the direction of the structural shift.
+**Data.** A Binary Telegraph Process: a piecewise-constant signal switching between −α and +α (α ∈ {1, 2}), with geometrically distributed regime lengths, plus noise of six spectral colours: white, pink (1/f), red (1/f²), blue, green, black.
 
-## Repository Structure and Execution
+**Model.** A simplified generic N-BEATS (PyTorch): two MLP blocks with the doubly-residual backcast/forecast mechanism. Adam, lr = 0.01, MSE loss, 15 epochs, 80/20 split, look-back horizons h ∈ {1, 2, 5, 10, 25}.
 
-* `Nbeats_pipeline_synth.py`: Main executable script containing the `RobustBTP` synthetic data generator, the simplified `SimpleNBeats` PyTorch architecture, and the experimental pipeline.
-* `requirements.txt`: Python environment dependencies.
-* `.gitignore`: Configuration to exclude generated datasets, temporary environments, and local system files.
+**Detection rule.** A break is flagged at t+1 when |x_{t+1} − x̂_{t+1}| exceeds the 95th (or 98th) percentile of validation errors.
 
-## Execution Instructions
+**Evaluation.** Margin-based Precision, Recall and F1 via `ruptures` (a detection counts if it is within w = 2 steps of a true break), plus PR-AUC and ROC-AUC.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Mishan6000/Kondrashov_Coursework_NBEATS.git
-   cd Mishan6000
+## Results
+
+Horizon h = 10, margin w = 2, 95th-percentile threshold:
+
+| Noise | Precision | Recall | F1 | PR-AUC | ROC-AUC |
+| --- | --- | --- | --- | --- | --- |
+| White | 0.146 | 0.430 | 0.215 | 0.154 | 0.622 |
+| Pink | 0.286 | 0.836 | 0.421 | 0.227 | 0.635 |
+| Red | 0.346 | 1.000 | 0.508 | 0.494 | 0.718 |
+| Blue | 0.202 | 0.585 | 0.297 | 0.257 | 0.694 |
+| Green | 0.342 | 0.989 | 0.502 | 0.362 | 0.680 |
+| Black | 0.324 | 0.941 | 0.477 | 0.337 | 0.782 |
+| **Average** | **0.274** | **0.796** | **0.403** | **0.305** | **0.688** |
+
+Key findings:
+
+- **Noise colour decides everything.** On correlated noise (red, green, black) N-BEATS tracks the slow drift, so a break produces an isolated error spike. On white noise the baseline error is already high and masks the breaks.
+- **Short look-back works best.** h ≈ 2–5 makes the network a reactive local filter; longer windows smooth the spike away.
+- **A stricter threshold isolates breaks.** At the 98th percentile F1 reaches ≈ 0.9 on red and green noise.
+- **The sign of the error carries direction.** Up vs. down shifts are classified with macro-F1 ≈ 0.7 on red and black noise.
+- **Inter-break gaps are not heavy-tailed.** For structured noise the fitted Student-t converges to a Normal (same KS distance).
+
+| | |
+| --- | --- |
+| ![Horizon sensitivity](graphics/nbeats_horizon_sensitivity_robust.jpeg) | ![Threshold × margin](graphics/nbeats_threshold_tolerance_bars.jpeg) |
+| F1 and PR-AUC vs. look-back horizon | Threshold percentile × tolerance margin |
+| ![Signed direction](graphics/nbeats_signed_horizon_sensitivity.jpeg) | ![Gap distribution](graphics/nbeats_btp_gap_distribution.jpeg) |
+| Direction of the shift from the error sign | Distribution of predicted inter-break gaps |
+
+## Repository structure
+
+```
+NBeats_Pipeline_synth.ipynb   full pipeline: data generator, N-BEATS, experiments, plots
+data/                         result tables (core metrics, signed metrics, distribution fits)
+graphics/                     figures used in the report
+requirements.txt              dependencies
+```
+
+## How to run
+
+```bash
+git clone https://github.com/Mishan6000/Kondrashov_Coursework_NBEATS.git
+cd Kondrashov_Coursework_NBEATS
+pip install -r requirements.txt
+jupyter notebook NBeats_Pipeline_synth.ipynb
+```
+
+Run the cells top to bottom; the N-BEATS experiments are in the "N-BEATS experiments" section. A GPU is not required.
+
+## Limitations and next steps
+
+- Synthetic data only; the next step is real series (financial tick data, temperature anomalies) to check whether the noise-colour dependency holds.
+- Baselines from the change-point literature (PELT, Binseg, LSTM-AD) should be compared on the same margin-based metrics.
+- One fixed simple architecture and training budget; results may shift with deeper N-BEATS variants.
+
+## References
+
+- Oreshkin et al. N-BEATS: Neural basis expansion analysis for interpretable time series forecasting. ICLR 2020. [arXiv:1905.10437](https://arxiv.org/abs/1905.10437)
+- Killick, Fearnhead, Eckley. Optimal detection of changepoints with a linear computational cost. JASA, 2012.
+- Truong, Oudre, Vayatis. Selective review of offline change point detection methods. Signal Processing, 2020.
